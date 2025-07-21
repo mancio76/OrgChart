@@ -219,6 +219,69 @@ async def create_function_web(
             "error": message
         })
 
+@router.get("/admin/functions/{function_name}/edit", response_class=HTMLResponse)
+async def edit_function_form(request: Request, function_name: str):
+    """Form modifica funzione"""
+    function = repository.get_function(function_name)
+    
+    if not function:
+        raise HTTPException(404, "Funzione non trovata")
+    
+    all_functions = repository.get_all_functions()
+    return templates.TemplateResponse("admin/function_form.html", {
+        "request": request,
+        "title": f"Modifica {function.name}",
+        "action": "edit",
+        "function": function,
+        "all_functions": [f for f in all_functions if f.name != function_name],
+    })
+
+@router.post("/admin/functions/{function_name}/edit")
+async def update_functions_web(
+    request: Request,
+    function_name: str,
+    reports_to: Optional[str] = Form(None),
+    flags: Optional[str] = Form(None)
+):
+    """Aggiorna funzione via form web"""
+    function_data = {
+        "reports_to": reports_to if reports_to else None,
+        "flags": flags if flags else None
+    }
+    
+    success, message = service.update_function(function_name, function_data)
+    
+    if success:
+        return RedirectResponse(
+            url=f"/admin/functions?success={message}",
+            status_code=303
+        )
+    else:
+        function = repository.get_function(function_name)
+        return templates.TemplateResponse("admin/function_form.html", {
+            "request": request,
+            "title": f"Modifica {function_name}",
+            "action": "edit",
+            "function": function,
+            "error": message
+        })
+
+@router.post("/admin/functions/{person_name}/delete")
+async def delete_function_web(function_name: str):
+    """Elimina funzione"""
+    success, message = service.delete_function(function_name)
+    
+    if success:
+        return RedirectResponse(
+            url=f"/admin/functions?success={message}",
+            status_code=303
+        )
+    else:
+        return RedirectResponse(
+            url=f"/admin/functions?error={message}",
+            status_code=303
+        )
+
 # ================================================================
 # ROLES - WEB CRUD
 # ================================================================
@@ -313,6 +376,58 @@ async def create_role_web(
             "persons": persons,
             "functions": functions,
             "job_titles": job_titles,
+            "error": message
+        })
+
+@router.get("/admin/roles/{role_id}/edit", response_class=HTMLResponse)
+async def edit_role_form(request: Request, role_id: int):
+    """Form modifica ruolo"""
+    role = repository.get_role(role_id)
+    
+    if not role:
+        raise HTTPException(404, "Ruolo non trovata")
+    
+    all_persons = repository.get_all_persons()
+    all_functions = repository.get_all_functions()
+    all_job_titles = repository.get_all_job_titles()
+    
+    return templates.TemplateResponse("admin/role_form.html", {
+        "request": request,
+        "title": f"Modifica {role.person_name}",
+        "action": "edit",
+        "role": role,
+        "persons": [p for p in all_persons if p is not None],
+        "functions": [f for f in all_functions if f is not None],
+        "job_titles": [j for j in all_job_titles if j is not None],
+    })
+
+@router.post("/admin/roles/{role_name}/edit")
+async def update_roles_web(
+    request: Request,
+    role_id: int,
+    reports_to: Optional[str] = Form(None),
+    flags: Optional[str] = Form(None)
+):
+    """Aggiorna role via form web"""
+    role_data = {
+        "reports_to": reports_to if reports_to else None,
+        "flags": flags if flags else None
+    }
+    
+    success, message = service.update_role(role_id, role_data)
+    
+    if success:
+        return RedirectResponse(
+            url=f"/admin/roles?success={message}",
+            status_code=303
+        )
+    else:
+        role = repository.get_role(role_id)
+        return templates.TemplateResponse("admin/role_form.html", {
+            "request": request,
+            "title": f"Modifica {role_id}",
+            "action": "edit",
+            "role": role,
             "error": message
         })
 

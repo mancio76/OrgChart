@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}Gestione Funzioni - Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="header-content">
+        <h1>Gestione Funzioni</h1>
+        <p class="page-subtitle">Amministrazione completa funzioni organizzative</p>
+    </div>
+    <div class="header-actions">
+        <a href="/admin/functions/new" class="btn btn-primary">➕ Nuova Funzione</a>
+    </div>
+</div>
+
+{% if request.query_params.get('success') %}
+<div class="alert alert-success">
+    ✅ {{ request.query_params.get('success') }}
+</div>
+{% endif %}
+
+{% if request.query_params.get('error') %}
+<div class="alert alert-error">
+    ❌ {{ request.query_params.get('error') }}
+</div>
+{% endif %}
+
+<div class="admin-filters">
+    <div class="filter-group">
+        <label>Filtra per livello:</label>
+        <select id="level-filter" class="filter-select">
+            <option value="">Tutti i livelli</option>
+            <option value="top">Top Level</option>
+            <option value="sub">Con Parent</option>
+        </select>
+    </div>
+    
+    <div class="filter-group">
+        <label>Ricerca:</label>
+        <input type="text" id="search-filter" placeholder="Nome funzione..." class="filter-input">
+    </div>
+    
+    <div class="filter-group">
+        <label>Con dipendenze:</label>
+        <input type="checkbox" id="dependencies-filter" title="Mostra solo funzioni con dipendenze">
+    </div>
+</div>
+
+<div class="table-container">
+    <table class="data-table" id="functions-table">
+        <thead>
+            <tr>
+                <th>Nome Funzione</th>
+                <th>Riporta a</th>
+                <th>Ruoli Attivi</th>
+                <th>Sub-Funzioni</th>
+                <th>Flags</th>
+                <th>Stato</th>
+                <th>Azioni</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for func_item in functions %}
+            <tr data-level="{{ 'top' if not func_item.function.reports_to else 'sub' }}"
+                data-has-deps="{{ func_item.dependencies.has_dependencies }}"
+                data-function-name="{{ func_item.function.name }}">
+                <td class="function-name">
+                    <a href="/function/{{ func_item.function.name }}">{{ func_item.function.name }}</a>
+                </td>
+                <td>
+                    {% if func_item.function.reports_to %}
+                    <a href="/function/{{ func_item.function.reports_to }}">{{ func_item.function.reports_to }}</a>
+                    {% else %}
+                    <span class="text-muted">🏛️ Top Level</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge-count">{{ func_item.active_roles }}</span>
+                </td>
+                <td>
+                    {% if func_item.dependencies.sub_functions > 0 %}
+                    <span class="badge-count">{{ func_item.dependencies.sub_functions }}</span>
+                    {% else %}
+                    <span class="text-muted">0</span>
+                    {% endif %}
+                </td>
+                <td class="flags-cell">{{ func_item.function.flags or '' }}</td>
+                <td>
+                    {% if func_item.dependencies.has_dependencies %}
+                    <span class="status-badge status-deps">Con Dipendenze</span>
+                    {% elif func_item.active_roles > 0 %}
+                    <span class="status-badge status-active">Attiva</span>
+                    {% else %}
+                    <span class="status-badge status-empty">Vuota</span>
+                    {% endif %}
+                </td>
+                <td class="actions-cell">
+                    <div class="action-buttons">
+                        <a href="/function/{{ func_item.function.name }}" class="btn-small">🏢 Dettagli</a>
+                        <a href="/admin/functions/{{ func_item.function.name }}/edit" class="btn-small btn-edit">✏️ Modifica</a>
+                        {% if func_item.can_delete %}
+                        <button class="btn-small btn-danger" onclick="confirmDeleteFunction('{{ func_item.function.name }}')">🗑️ Elimina</button>
+                        {% else %}
+                        <span class="btn-small btn-disabled" title="Non eliminabile: ha dipendenze">🔒 Protetta</span>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Sezione informazioni aggiuntive -->
+<div class="admin-sections" style="margin-top: 2rem;">
+    <div class="admin-section">
+        <h2>📊 Statistiche Funzioni</h2>
+        <div class="stats-details">
+            <div class="stat-item">
+                <span class="stat-label">Funzioni totali:</span>
+                <span class="stat-value">{{ functions|length }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Funzioni top-level:</span>
+                <span class="stat-value">{{ functions|selectattr('function.reports_to', 'none')|list|length }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Con dipendenze:</span>
+                <span class="stat-value">{{ functions|selectattr('dependencies.has_dependencies')|list|length }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="admin-section">
+        <h2>ℹ️ Legenda Stati</h2>
+        <div class="legend">
+            <div class="legend-item">
+                <span class="status-badge status-active">Attiva</span>
+                <span>Ha ruoli assegnati</span>
+            </div>
+            <div class="legend-item">
+                <span class="status-badge status-deps">Con Dipendenze</span>
+                <span>Ha sub-funzioni</span>
+            </div>
+            <div class="legend-item">
+                <span class="status-badge status-empty">Vuota</span>
+                <span>Nessun ruolo assegnato</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal conferma eliminazione -->
+<div id="delete-function-modal" class="modal hidden">
+    <div class="modal-content">
+        <h3>Conferma Eliminazione</h3>
+        <p>Sei sicuro di voler eliminare questa funzione?</p>
+        <p><strong>Funzione:</strong> <span id="delete-function-name"></span></p>
+        <p><strong>ATTENZIONE:</strong> L'operazione è irreversibile.</p>
+        <div class="modal-actions">
+            <form id="delete-function-form" method="post" style="display: inline;">
+                <button type="submit" class="btn btn-danger">Sì, Elimina</button>
+            </form>
+            <button class="btn btn-secondary" onclick="closeDeleteFunctionModal()">Annulla</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDeleteFunction(functionName) {
+    document.getElementById('delete-function-name').textContent = functionName;
+    document.getElementById('delete-function-form').action = `/admin/functions/${functionName}/delete`;
+    document.getElementById('delete-function-modal').classList.remove('hidden');
+}
+
+function closeDeleteFunctionModal() {
+    document.getElementById('delete-function-modal').classList.add('hidden');
+}
+
+// Filtri tabella
+document.getElementById('level-filter').addEventListener('change', filterTable);
+document.getElementById('search-filter').addEventListener('input', filterTable);
+document.getElementById('dependencies-filter').addEventListener('change', filterTable);
+
+function filterTable() {
+    const levelFilter = document.getElementById('level-filter').value;
+    const searchFilter = document.getElementById('search-filter').value.toLowerCase();
+    const depsFilter = document.getElementById('dependencies-filter').checked;
+    const rows = document.querySelectorAll('#functions-table tbody tr');
+    
+    rows.forEach(row => {
+        const level = row.dataset.level;
+        const functionName = row.dataset.functionName.toLowerCase();
+        const hasDeps = row.dataset.hasDeps === 'True';
+        
+        const levelMatch = !levelFilter || level === levelFilter;
+        const searchMatch = !searchFilter || functionName.includes(searchFilter);
+        const depsMatch = !depsFilter || hasDeps;
+        
+        row.style.display = levelMatch && searchMatch && depsMatch ? '' : 'none';
+    });
+}
+
+// Contatore risultati filtrati
+function updateFilterResults() {
+    const visibleRows = document.querySelectorAll('#functions-table tbody tr:not([style*="display: none"])');
+    const totalRows = document.querySelectorAll('#functions-table tbody tr');
+    
+    console.log(`Mostrando ${visibleRows.length} di ${totalRows.length} funzioni`);
+}
+
+// Aggiorna contatore dopo ogni filtro
+['change', 'input'].forEach(event => {
+    document.getElementById('level-filter').addEventListener(event, updateFilterResults);
+    document.getElementById('search-filter').addEventListener(event, updateFilterResults);
+    document.getElementById('dependencies-filter').addEventListener(event, updateFilterResults);
+});
+</script>
+
+<style>
+
+</style>
+{% endblock %}

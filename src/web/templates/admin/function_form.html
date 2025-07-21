@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>{{ title }}</h1>
+    <div class="header-actions">
+        <a href="/admin/functions" class="btn btn-secondary">← Torna alla lista</a>
+    </div>
+</div>
+
+{% if error %}
+<div class="alert alert-error">
+    ❌ {{ error }}
+</div>
+{% endif %}
+
+<div class="form-container">
+    <form method="post" class="admin-form" onsubmit="return validateForm()">
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="name">Nome Funzione *</label>
+                <input type="text" id="name" name="name" 
+                       value="{{ function.name if function else '' }}" 
+                       required {{ 'readonly' if action == 'edit' else '' }}
+                       placeholder="Es: Engineering, Marketing, Finance">
+                {% if action == 'edit' %}
+                <small>Il nome non può essere modificato</small>
+                {% else %}
+                <small>Nome univoco della funzione organizzativa</small>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="reports_to">Riporta a</label>
+                <select id="reports_to" name="reports_to">
+                    <option value="">-- Nessun parent (Top Level) --</option>
+                    {% for func in all_functions %}
+                    {% if not function or func.name != function.name %}
+                    <option value="{{ func.name }}" 
+                            {{ 'selected' if function and function.reports_to == func.name else '' }}>
+                        {{ func.name }}
+                        {% if not func.reports_to %}(Top Level){% endif %}
+                    </option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+                <small>Seleziona la funzione parent nella gerarchia</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="flags">Flags</label>
+                <input type="text" id="flags" name="flags" 
+                       value="{{ function.flags if function else '' }}"
+                       placeholder="Es: STRATEGIC, OPERATIONAL, SUPPORT">
+                <small>Etichette separate da virgola per categorizzazione</small>
+            </div>
+        </div>
+        
+        <!-- Sezione preview gerarchia -->
+        {% if action == 'create' or function %}
+        <div class="hierarchy-preview">
+            <h3>🌳 Preview Gerarchia</h3>
+            <div id="hierarchy-display" class="hierarchy-tree">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                {% if action == 'create' %}➕ Crea Funzione{% else %}💾 Salva Modifiche{% endif %}
+            </button>
+            <a href="/admin/functions" class="btn btn-secondary">Annulla</a>
+        </div>
+    </form>
+</div>
+
+<!-- Sezione informazioni -->
+{% if function and action == 'edit' %}
+<div class="admin-sections" style="margin-top: 2rem;">
+    <div class="admin-section">
+        <h2>📊 Informazioni Funzione</h2>
+        <div class="stats-details">
+            <div class="stat-item">
+                <span class="stat-label">Data creazione:</span>
+                <span class="stat-value">{{ function.created_at or 'N/A' }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Ultima modifica:</span>
+                <span class="stat-value">{{ function.updated_at or 'N/A' }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="admin-section">
+        <h2>⚠️ Considerazioni</h2>
+        <ul class="warning-list">
+            <li>Modificare la gerarchia può influenzare i report</li>
+            <li>Assicurati che non si creino cicli nella struttura</li>
+            <li>I ruoli esistenti non saranno modificati</li>
+        </ul>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Funzioni disponibili per controllo cicli
+const allFunctions = [
+    {% for func in all_functions %}
+    {
+        name: "{{ func.name }}",
+        reports_to: "{{ func.reports_to or '' }}"
+    },
+    {% endfor %}
+];
+
+function validateForm() {
+    const functionName = document.getElementById('name').value.trim();
+    const reportsTo = document.getElementById('reports_to').value;
+    
+    if (!functionName) {
+        alert('Nome funzione richiesto');
+        return false;
+    }
+    
+    // Controllo lunghezza nome
+    if (functionName.length < 2) {
+        alert('Il nome deve essere di almeno 2 caratteri');
+        return false;
+    }
+    
+    if (functionName.length > 100) {
+        alert('Il nome non può superare 100 caratteri');
+        return false;
+    }
+    
+    // Controllo auto-assignment
+    if (reportsTo === functionName) {
+        alert('Una funzione non può riportare a se stessa');
+        return false;
+    }
+    
+    // Controllo cicli nella gerarchia
+    if (reportsTo && wouldCreateCycle(functionName, reportsTo)) {
+        alert('Questa assegnazione creerebbe un ciclo nella gerarchia');
+        return false;
+    }
+    
+    return true;
+}
+
+function wouldCreateCycle(functionName, newParent) {
+    let current = newParent;
+    const visited = new Set();
+    
+    while (current && current !== '') {
+        if (current === functionName) {
+            return true; // Ciclo trovato
+        }
+        
+        if (visited.has(current)) {
+            break; // Ciclo esistente, ma non coinvolge functionName
+        }
+        
+        visited.add(current);
+        
+        // Trova il parent del current
+        const func = allFunctions.find(f => f.name === current);
+        current = func ? func.reports_to : '';
+    }
+    
+    return false;
+}
+
+// Update hierarchy preview
+function updateHierarchyPreview() {
+    const functionName = document.getElementById('name').value || '[Nuova Funzione]';
+    const reportsTo = document.getElementById('reports_to').value;
+    const display = document.getElementById('hierarchy-display');
+    
+    if (!display) return;
+    
+    let hierarchy = [];
+    
+    // Costruisci path dalla root
+    if (reportsTo) {
+        hierarchy = buildPath(reportsTo);
+    }
+    
+    hierarchy.push(functionName);
+    
+    // Visualizza gerarchia
+    const hierarchyHtml = hierarchy.map((name, index) => {
+        const indent = '&nbsp;'.repeat(index * 4);
+        const isNew = name === functionName && name === '[Nuova Funzione]';
+        const className = isNew ? 'new-function' : 'existing-function';
+        return `<div class="${className}">${indent}${index > 0 ? '└─ ' : ''}${name}</div>`;
+    }).join('');
+    
+    display.innerHTML = hierarchyHtml || '<div class="text-muted">Top Level Function</div>';
+}
+
+function buildPath(functionName) {
+    const path = [];
+    let current = functionName;
+    const visited = new Set();
+    
+    while (current && !visited.has(current)) {
+        visited.add(current);
+        path.unshift(current);
+        
+        const func = allFunctions.find(f => f.name === current);
+        current = func ? func.reports_to : '';
+    }
+    
+    return path;
+}
+
+// Event listeners
+document.getElementById('name').addEventListener('input', updateHierarchyPreview);
+document.getElementById('reports_to').addEventListener('change', updateHierarchyPreview);
+
+// Initial preview
+document.addEventListener('DOMContentLoaded', updateHierarchyPreview);
+
+// Auto-format name field
+document.getElementById('name').addEventListener('blur', function() {
+    this.value = this.value.trim();
+});
+
+// Suggerimenti flags
+const flagsSuggestions = ['STRATEGIC', 'OPERATIONAL', 'SUPPORT', 'TEMPORARY', 'CORE', 'SECONDARY'];
+const flagsField = document.getElementById('flags');
+
+flagsField.addEventListener('focus', function() {
+    if (!this.value) {
+        this.placeholder = 'Suggerimenti: ' + flagsSuggestions.join(', ');
+    }
+});
+
+flagsField.addEventListener('blur', function() {
+    this.placeholder = 'Es: STRATEGIC, OPERATIONAL, SUPPORT';
+});
+</script>
+{% endblock %}

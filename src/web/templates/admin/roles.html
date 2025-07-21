@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="header-content">
+        <h1>{{ title }}</h1>
+        <p class="page-subtitle">Amministrazione ruoli dipendenti</p>
+    </div>
+    <div class="header-actions">
+        <a href="/admin/roles/new" class="btn btn-primary">➕ Nuovo Ruolo</a>
+    </div>
+</div>
+
+{% if request.query_params.get('success') %}
+<div class="alert alert-success">
+    ✅ {{ request.query_params.get('success') }}
+</div>
+{% endif %}
+
+{% if request.query_params.get('error') %}
+<div class="alert alert-error">
+    ❌ {{ request.query_params.get('error') }}
+</div>
+{% endif %}
+
+<div class="admin-filters">
+    {% if not filter_person %}
+    <div class="filter-group">
+        <label>Filtra per persona:</label>
+        <select id="person-filter" class="filter-select" onchange="filterByPerson()">
+            <option value="">Tutti</option>
+            {% for person in persons %}
+            <option value="{{ person.name }}">{{ person.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endif %}
+    
+    <div class="filter-group">
+        <label>Filtra per funzione:</label>
+        <select id="function-filter" class="filter-select">
+            <option value="">Tutte</option>
+            {% for function in functions %}
+            <option value="{{ function.name }}">{{ function.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    
+    <div class="filter-group">
+        <label>Solo ad interim:</label>
+        <input type="checkbox" id="interim-filter">
+    </div>
+</div>
+
+<div class="table-container">
+    <table class="data-table" id="roles-table">
+        <thead>
+            <tr>
+                <th>Persona</th>
+                <th>Funzione</th>
+                <th>Job Title</th>
+                <th>Unità Organizzativa</th>
+                <th>Percentuale</th>
+                <th>Ad Interim</th>
+                <th>Riporta a</th>
+                <th>Inizio</th>
+                <th>Azioni</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for role in roles %}
+            <tr data-person="{{ role.person_name }}" 
+                data-function="{{ role.function_name }}" 
+                data-interim="{{ role.ad_interim }}">
+                <td class="person-name">
+                    <a href="/employee/{{ role.person_name }}">{{ role.person_name }}</a>
+                </td>
+                <td class="function-name">
+                    <a href="/function/{{ role.function_name }}">{{ role.function_name }}</a>
+                </td>
+                <td>{{ role.job_title_name or 'N/A' }}</td>
+                <td>{{ role.organizational_unit or 'N/A' }}</td>
+                <td>
+                    {% if role.percentage != 1.0 %}
+                    <span class="percentage-badge">{{ (role.percentage * 100)|round(1) }}%</span>
+                    {% else %}
+                    100%
+                    {% endif %}
+                </td>
+                <td>
+                    {% if role.ad_interim %}
+                    <span class="interim-badge">Ad Interim</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if role.reports_to %}
+                    <a href="/employee/{{ role.reports_to }}">{{ role.reports_to }}</a>
+                    {% else %}
+                    N/A
+                    {% endif %}
+                </td>
+                <td>{{ role.start_date or 'N/A' }}</td>
+                <td class="actions-cell">
+                    <div class="action-buttons">
+                        <a href="/admin/roles/{{ role.id }}/edit" class="btn-small btn-edit">✏️ Modifica</a>
+                        <button class="btn-small btn-danger" 
+                                onclick="confirmEndRole({{ role.id }}, '{{ role.person_name }}', '{{ role.function_name }}')">
+                            ⏹️ Termina
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div id="end-role-modal" class="modal hidden">
+    <div class="modal-content">
+        <h3>Conferma Terminazione Ruolo</h3>
+        <p>Sei sicuro di voler terminare questo ruolo?</p>
+        <p><strong>Persona:</strong> <span id="end-role-person"></span></p>
+        <p><strong>Funzione:</strong> <span id="end-role-function"></span></p>
+        <div class="form-group">
+            <label for="end-date">Data terminazione:</label>
+            <input type="date" id="end-date" name="end_date" value="{{ current_date }}">
+        </div>
+        <div class="modal-actions">
+            <form id="end-role-form" method="post" style="display: inline;">
+                <input type="hidden" id="end-date-hidden" name="end_date">
+                <button type="submit" class="btn btn-danger">Sì, Termina</button>
+            </form>
+            <button class="btn btn-secondary" onclick="closeEndRoleModal()">Annulla</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const current_date = new Date();
+
+function filterByPerson() {
+    const personName = document.getElementById('person-filter').value;
+    if (personName) {
+        window.location.href = `/admin/roles?person_name=${encodeURIComponent(personName)}`;
+    } else {
+        window.location.href = '/admin/roles';
+    }
+}
+
+function confirmEndRole(roleId, personName, functionName) {
+    document.getElementById('end-role-person').textContent = personName;
+    document.getElementById('end-role-function').textContent = functionName;
+    document.getElementById('end-role-form').action = `/admin/roles/${roleId}/end`;
+    document.getElementById('end-role-modal').classList.remove('hidden');
+}
+
+function closeEndRoleModal() {
+    document.getElementById('end-role-modal').classList.add('hidden');
+}
+
+// Sync date inputs
+document.getElementById('end-date').addEventListener('change', function() {
+    document.getElementById('end-date-hidden').value = this.value;
+});
+
+// Filtri tabella
+document.getElementById('function-filter').addEventListener('change', filterTable);
+document.getElementById('interim-filter').addEventListener('change', filterTable);
+
+function filterTable() {
+    const functionFilter = document.getElementById('function-filter').value.toLowerCase();
+    const interimFilter = document.getElementById('interim-filter').checked;
+    const rows = document.querySelectorAll('#roles-table tbody tr');
+    
+    rows.forEach(row => {
+        const function_name = row.dataset.function.toLowerCase();
+        const is_interim = row.dataset.interim === 'True';
+        
+        const functionMatch = !functionFilter || function_name.includes(functionFilter);
+        const interimMatch = !interimFilter || is_interim;
+        
+        row.style.display = functionMatch && interimMatch ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

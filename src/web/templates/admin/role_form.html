@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>{{ title }}</h1>
+    <div class="header-actions">
+        <a href="/admin/roles" class="btn btn-secondary">← Torna alla lista</a>
+    </div>
+</div>
+
+{% if error %}
+<div class="alert alert-error">
+    ❌ {{ error }}
+</div>
+{% endif %}
+
+<div class="form-container">
+    <form method="post" class="admin-form">
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="person_name">Persona *</label>
+                <select id="person_name" name="person_name" required>
+                    <option value="">-- Seleziona persona --</option>
+                    {% for person in persons %}
+                    <option value="{{ person.name }}" 
+                            {{ 'selected' if role and role.person_name == person.name else '' }}>
+                        {{ person.name }} ({{ person.employee_id or 'N/A' }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="function_name">Funzione *</label>
+                <select id="function_name" name="function_name" required>
+                    <option value="">-- Seleziona funzione --</option>
+                    {% for function in functions %}
+                    <option value="{{ function.name }}" 
+                            {{ 'selected' if role and role.function_name == function.name else '' }}>
+                        {{ function.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="job_title_name">Job Title</label>
+                <select id="job_title_name" name="job_title_name">
+                    <option value="">-- Seleziona job title --</option>
+                    {% for job_title in job_titles %}
+                    <option value="{{ job_title.name }}" 
+                            {{ 'selected' if role and role.job_title_name == job_title.name else '' }}>
+                        {{ job_title.name }} (Livello {{ job_title.level or 'N/A' }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="organizational_unit">Unità Organizzativa</label>
+                <input type="text" id="organizational_unit" name="organizational_unit" 
+                       value="{{ role.organizational_unit if role else '' }}"
+                       placeholder="Es: IT Department, Sales Team">
+            </div>
+            
+            <div class="form-group">
+                <label for="percentage">Percentuale</label>
+                <input type="number" id="percentage" name="percentage" 
+                       min="0.01" max="1" step="0.01"
+                       value="{{ role.percentage if role else '1.0' }}">
+                <small>Valore tra 0.01 e 1.0 (es: 0.5 = 50%)</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="reports_to">Riporta a</label>
+                <select id="reports_to" name="reports_to">
+                    <option value="">-- Nessun manager --</option>
+                    {% for person in persons %}
+                    <option value="{{ person.name }}" 
+                            {{ 'selected' if role and role.reports_to == person.name else '' }}>
+                        {{ person.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="start_date">Data Inizio</label>
+                <input type="date" id="start_date" name="start_date" 
+                       value="{{ role.start_date if role else '' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="ad_interim">
+                    <input type="checkbox" id="ad_interim" name="ad_interim" value="true"
+                           {{ 'checked' if role and role.ad_interim else '' }}>
+                    Ruolo ad Interim
+                </label>
+                <small>Indica se si tratta di un ruolo temporaneo</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="flags">Flags</label>
+                <input type="text" id="flags" name="flags" 
+                       value="{{ role.flags if role else '' }}"
+                       placeholder="Es: TEMPORARY, ACTING, etc.">
+                <small>Etichette separate da virgola</small>
+            </div>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                {% if action == 'create' %}➕ Crea Ruolo{% else %}💾 Salva Modifiche{% endif %}
+            </button>
+            <a href="/admin/roles" class="btn btn-secondary">Annulla</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Validazioni e miglioramenti UX
+document.addEventListener('DOMContentLoaded', function() {
+    // Imposta data corrente se non specificata
+    const startDateField = document.getElementById('start_date');
+    if (!startDateField.value && '{{ action }}' === 'create') {
+        const today = new Date().toISOString().split('T')[0];
+        startDateField.value = today;
+    }
+    
+    // Validazione percentuale
+    const percentageField = document.getElementById('percentage');
+    percentageField.addEventListener('input', function() {
+        const value = parseFloat(this.value);
+        if (value <= 0 || value > 1) {
+            this.setCustomValidity('La percentuale deve essere tra 0.01 e 1.0');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+    
+    // Prevenzione auto-assignment come manager
+    const personSelect = document.getElementById('person_name');
+    const reportsToSelect = document.getElementById('reports_to');
+    
+    personSelect.addEventListener('change', function() {
+        const selectedPerson = this.value;
+        
+        // Ripristina tutte le opzioni
+        Array.from(reportsToSelect.options).forEach(option => {
+            option.disabled = false;
+        });
+        
+        // Disabilita l'opzione della persona selezionata
+        if (selectedPerson) {
+            Array.from(reportsToSelect.options).forEach(option => {
+                if (option.value === selectedPerson) {
+                    option.disabled = true;
+                }
+            });
+            
+            // Se era selezionata la stessa persona come manager, deseleziona
+            if (reportsToSelect.value === selectedPerson) {
+                reportsToSelect.value = '';
+            }
+        }
+    });
+    
+    // Aggiorna display percentuale
+    percentageField.addEventListener('input', function() {
+        const percentage = parseFloat(this.value) * 100;
+        if (!isNaN(percentage)) {
+            const display = document.getElementById('percentage-display');
+            if (display) {
+                display.textContent = `${percentage.toFixed(1)}%`;
+            }
+        }
+    });
+});
+
+// Funzione per conferma submit con validazioni
+function validateForm() {
+    const personName = document.getElementById('person_name').value;
+    const functionName = document.getElementById('function_name').value;
+    const percentage = parseFloat(document.getElementById('percentage').value);
+    
+    if (!personName) {
+        alert('Seleziona una persona');
+        return false;
+    }
+    
+    if (!functionName) {
+        alert('Seleziona una funzione');
+        return false;
+    }
+    
+    if (percentage <= 0 || percentage > 1) {
+        alert('La percentuale deve essere tra 0.01 e 1.0');
+        return false;
+    }
+    
+    // Conferma per ruoli parziali
+    if (percentage < 1.0) {
+        return confirm(`Stai creando un ruolo parziale al ${(percentage * 100).toFixed(1)}%. Continuare?`);
+    }
+    
+    return true;
+}
+
+// Attach validation to form
+document.querySelector('.admin-form').addEventListener('submit', function(e) {
+    if (!validateForm()) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}

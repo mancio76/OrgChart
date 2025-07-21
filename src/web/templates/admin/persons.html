@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Gestione Dipendenti - Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="header-content">
+        <h1>Gestione Dipendenti</h1>
+        <p class="page-subtitle">Amministrazione completa dipendenti</p>
+    </div>
+    <div class="header-actions">
+        <a href="/admin/persons/new" class="btn btn-primary">➕ Nuovo Dipendente</a>
+    </div>
+</div>
+
+{% if request.query_params.get('success') %}
+<div class="alert alert-success">
+    ✅ {{ request.query_params.get('success') }}
+</div>
+{% endif %}
+
+{% if request.query_params.get('error') %}
+<div class="alert alert-error">
+    ❌ {{ request.query_params.get('error') }}
+</div>
+{% endif %}
+
+<div class="admin-filters">
+    <div class="filter-group">
+        <label>Filtra per stato:</label>
+        <select id="status-filter" class="filter-select" title="Filtra per stato">
+            <option value="">Tutti</option>
+            <option value="ACTIVE">Attivi</option>
+            <option value="INACTIVE">Inattivi</option>
+            <option value="TERMINATED">Terminati</option>
+        </select>
+    </div>
+    
+    <div class="filter-group">
+        <label>Ricerca:</label>
+        <input type="text" id="search-filter" placeholder="Nome, email o ID..." class="filter-input">
+    </div>
+</div>
+
+<div class="table-container">
+    <table class="data-table" id="persons-table">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>ID Dipendente</th>
+                <th>Data Assunzione</th>
+                <th>Stato</th>
+                <th>Flags</th>
+                <th>Azioni</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for person in persons %}
+            <tr data-status="{{ person.status }}">
+                <td class="person-name">
+                    <a href="/employee/{{ person.name }}">{{ person.name }}</a>
+                </td>
+                <td>{{ person.email or 'N/A' }}</td>
+                <td>{{ person.employee_id or 'N/A' }}</td>
+                <td>{{ person.hire_date or 'N/A' }}</td>
+                <td>
+                    <span class="status-badge status-{{ person.status.lower() }}">
+                        {{ person.status }}
+                    </span>
+                </td>
+                <td class="flags-cell">{{ person.flags or '' }}</td>
+                <td class="actions-cell">
+                    <div class="action-buttons">
+                        <a href="/admin/persons/{{ person.name }}/edit" class="btn-small btn-edit">✏️ Modifica</a>
+                        <a href="/admin/roles?person_name={{ person.name }}" class="btn-small">💼 Ruoli</a>
+                        {% if person.status == 'ACTIVE' %}
+                        <button class="btn-small btn-danger" onclick="confirmDelete('{{ person.name }}')">🗑️ Elimina</button>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div id="delete-modal" class="modal hidden">
+    <div class="modal-content">
+        <h3>Conferma Eliminazione</h3>
+        <p>Sei sicuro di voler eliminare questo dipendente?</p>
+        <p><strong>ATTENZIONE:</strong> L'operazione è irreversibile.</p>
+        <div class="modal-actions">
+            <form id="delete-form" method="post" style="display: inline;">
+                <button type="submit" class="btn btn-danger">Sì, Elimina</button>
+            </form>
+            <button class="btn btn-secondary" onclick="closeDeleteModal()">Annulla</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete(personName) {
+    document.getElementById('delete-form').action = `/admin/persons/${personName}/delete`;
+    document.getElementById('delete-modal').classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    document.getElementById('delete-modal').classList.add('hidden');
+}
+
+// Filtri tabella
+document.getElementById('status-filter').addEventListener('change', filterTable);
+document.getElementById('search-filter').addEventListener('input', filterTable);
+
+function filterTable() {
+    const statusFilter = document.getElementById('status-filter').value.toLowerCase();
+    const searchFilter = document.getElementById('search-filter').value.toLowerCase();
+    const rows = document.querySelectorAll('#persons-table tbody tr');
+    
+    rows.forEach(row => {
+        const status = row.dataset.status.toLowerCase();
+        const text = row.textContent.toLowerCase();
+        
+        const statusMatch = !statusFilter || status === statusFilter;
+        const searchMatch = !searchFilter || text.includes(searchFilter);
+        
+        row.style.display = statusMatch && searchMatch ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

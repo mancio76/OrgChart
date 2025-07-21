@@ -655,4 +655,13 @@ a:hover {
         box-shadow: none;
         border: 1px solid #ccc;
     }
+
+    .admin-link {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+    }
+
+    .admin-link:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
 }

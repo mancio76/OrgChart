@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Amministrazione - Organigramma Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>🛠️ Amministrazione</h1>
+    <p class="page-subtitle">Gestione completa dell'organigramma aziendale</p>
+</div>
+
+<div class="admin-nav">
+    <div class="nav-grid">
+        <a href="/admin/persons" class="admin-nav-card">
+            <div class="nav-icon">👥</div>
+            <h3>Dipendenti</h3>
+            <p>{{ stats.total_persons }} dipendenti</p>
+            <span class="nav-action">Gestisci →</span>
+        </a>
+        
+        <a href="/admin/functions" class="admin-nav-card">
+            <div class="nav-icon">🏢</div>
+            <h3>Funzioni</h3>
+            <p>{{ stats.total_functions }} funzioni</p>
+            <span class="nav-action">Gestisci →</span>
+        </a>
+        
+        <a href="/admin/roles" class="admin-nav-card">
+            <div class="nav-icon">💼</div>
+            <h3>Ruoli</h3>
+            <p>{{ stats.total_roles }} ruoli attivi</p>
+            <span class="nav-action">Gestisci →</span>
+        </a>
+        
+        <a href="/admin/bulk" class="admin-nav-card">
+            <div class="nav-icon">⚡</div>
+            <h3>Operazioni</h3>
+            <p>Modifiche in blocco</p>
+            <span class="nav-action">Esegui →</span>
+        </a>
+    </div>
+</div>
+
+<div class="admin-sections">
+    <div class="admin-section">
+        <h2>📊 Statistiche Dettagliate</h2>
+        <div class="stats-details">
+            <div class="stat-item">
+                <span class="stat-label">Dipendenti con ruoli multipli:</span>
+                <span class="stat-value">{{ stats.multi_role_persons }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Ruoli ad interim:</span>
+                <span class="stat-value">{{ stats.interim_roles }}</span>
+            </div>
+        </div>
+        
+        {% if stats.functions_by_headcount %}
+        <div class="chart-container">
+            <h3>Funzioni per Headcount</h3>
+            <div class="horizontal-chart">
+                {% for func in stats.functions_by_headcount[:10] %}
+                <div class="chart-item">
+                    <span class="chart-label">{{ func.name[:30] }}</span>
+                    <div class="chart-bar">
+                        <div class="chart-fill" style="width: {{ (func.role_count / stats.functions_by_headcount[0].role_count * 100)|round }}%"></div>
+                    </div>
+                    <span class="chart-value">{{ func.role_count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="admin-section">
+        <h2>🔄 Attività Recenti</h2>
+        <div class="recent-activity">
+            <div class="activity-item">
+                <span class="activity-icon">➕</span>
+                <div class="activity-content">
+                    <p>Sistema CRUD implementato</p>
+                    <small>Tutte le operazioni sono ora disponibili</small>
+                </div>
+                <span class="activity-time">Ora</span>
+            </div>
+        </div>
+        
+        <div class="admin-actions">
+            <h3>Azioni Rapide</h3>
+            <div class="quick-actions">
+                <a href="/admin/persons/new" class="quick-action">➕ Nuovo Dipendente</a>
+                <a href="/admin/functions/new" class="quick-action">🏢 Nuova Funzione</a>
+                <a href="/admin/roles/new" class="quick-action">💼 Nuovo Ruolo</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

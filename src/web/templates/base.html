@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Organigramma Manager{% endblock %}</title>
     <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/admin.css">
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
-    <meta name="theme-color" content="#2563eb">
+    <!--meta name="theme-color" content="#2563eb"-->
+    <meta name="msapplication-TileColor" content="#2563eb">
 </head>
 <body>
     <nav class="navbar">
@@ -21,6 +23,7 @@
                 <a href="/employees" class="nav-link">Dipendenti</a>
                 <a href="/organization" class="nav-link">Organigramma</a>
                 <a href="/functions" class="nav-link">Funzioni</a>
+                <a href="/admin" class="nav-link admin-link">🛠️ Admin</a>
             </div>
         </div>
     </nav>
@@ -39,5 +42,7 @@
 
     <script src="/static/app.js"></script>
     {% block scripts %}{% endblock %}
+    
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

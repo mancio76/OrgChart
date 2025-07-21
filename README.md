@@ -78,11 +78,11 @@ python main.py status --check-db
 
 ### Accesso Web
 
-Apri il browser su: http://localhost:8000
+Apri il browser su: <http://localhost:8000>
 
 ## 📚 Struttura Progetto
 
-```
+```plaintext
 organigramma_app/
 ├── src/
 │   ├── database/          # Layer database
@@ -200,4 +200,4 @@ python create_favicon.py
 python main.py start --debug
 ```
 
-Apri http://localhost:8000 e inizia a esplorare! 🎉
+Apri <http://localhost:8000> e inizia a esplorare! 🎉

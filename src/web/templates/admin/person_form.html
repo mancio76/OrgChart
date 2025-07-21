@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>{{ title }}</h1>
+    <div class="header-actions">
+        <a href="/admin/persons" class="btn btn-secondary">← Torna alla lista</a>
+    </div>
+</div>
+
+{% if error %}
+<div class="alert alert-error">
+    ❌ {{ error }}
+</div>
+{% endif %}
+
+<div class="form-container">
+    <form method="post" class="admin-form">
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="name">Nome Completo *</label>
+                <input type="text" id="name" name="name" 
+                       value="{{ person.name if person else '' }}" 
+                       required {{ 'readonly' if action == 'edit' else '' }}>
+                {% if action == 'edit' %}
+                <small>Il nome non può essere modificato</small>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="employee_id">ID Dipendente</label>
+                <input type="text" id="employee_id" name="employee_id" 
+                       value="{{ person.employee_id if person else '' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" 
+                       value="{{ person.email if person else '' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="hire_date">Data Assunzione</label>
+                <input type="date" id="hire_date" name="hire_date" 
+                       value="{{ person.hire_date if person else '' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="status">Stato</label>
+                <select id="status" name="status">
+                    <option value="ACTIVE" {{ 'selected' if not person or person.status == 'ACTIVE' else '' }}>Attivo</option>
+                    <option value="INACTIVE" {{ 'selected' if person and person.status == 'INACTIVE' else '' }}>Inattivo</option>
+                    <option value="TERMINATED" {{ 'selected' if person and person.status == 'TERMINATED' else '' }}>Terminato</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="flags">Flags</label>
+                <input type="text" id="flags" name="flags" 
+                       value="{{ person.flags if person else '' }}"
+                       placeholder="Es: MANAGER, EXTERNAL, etc.">
+                <small>Etichette separate da virgola</small>
+            </div>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                {% if action == 'create' %}➕ Crea Dipendente{% else %}💾 Salva Modifiche{% endif %}
+            </button>
+            <a href="/admin/persons" class="btn btn-secondary">Annulla</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

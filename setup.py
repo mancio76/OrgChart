@@ -1,4 +1,8 @@
 from setuptools import setup, find_packages
+import os
+import sys
+import logging
+from pathlib import Path
 
 setup(
     name="organigramma-manager",
@@ -43,3 +47,50 @@ setup(
         "Programming Language :: Python :: 3.11",
     ],
 )
+
+def setup_organigramma():
+    """Setup completo dell'applicazione"""
+    print("🚀 Setup Organigramma Manager v2.0")
+    print("=" * 50)
+    
+    # Crea directory necessarie
+    dirs = [
+        "data",
+        "logs", 
+        "src/web/static",
+        "src/web/templates/admin",
+        "database"
+    ]
+    
+    for dir_path in dirs:
+        Path(dir_path).mkdir(parents=True, exist_ok=True)
+        print(f"✅ Directory: {dir_path}")
+    
+    # Crea file vuoti necessari
+    init_files = [
+        "src/web/__init__.py",
+        "src/web/routes/__init__.py"
+    ]
+    
+    for file_path in init_files:
+        Path(file_path).touch()
+        print(f"✅ File: {file_path}")
+    
+    # Test import e inizializzazione database
+    try:
+        from src.database.connection import DatabaseConnection
+        db = DatabaseConnection()
+        print("✅ Database inizializzato")
+    except Exception as e:
+        print(f"❌ Errore database: {e}")
+        return False
+    
+    print("\n✅ Setup completato!")
+    print("\nComandi disponibili:")
+    print("  python main.py start                # Avvia server")
+    print("  python -m uvicorn src.ui.app:app    # Avvia direttamente")
+    
+    return True
+
+if __name__ == "__main__":
+    setup_organigramma()

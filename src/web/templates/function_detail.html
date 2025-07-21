@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}{{ function.name }} - Dettagli Funzione{% endblock %}
+
+{% block content %}
+<div class="function-header">
+    <div class="function-info">
+        <h1>{{ function.name }}</h1>
+        <div class="function-details">
+            {% if function.reports_to %}
+            <p><strong>Riporta a:</strong> 
+                <a href="/function/{{ function.reports_to }}">{{ function.reports_to }}</a>
+            </p>
+            {% else %}
+            <p><strong>Livello:</strong> Top Level</p>
+            {% endif %}
+            {% if function.flags %}
+            <p><strong>Flags:</strong> {{ function.flags }}</p>
+            {% endif %}
+            <p><strong>Headcount:</strong> {{ headcount }} persone</p>
+        </div>
+    </div>
+    <div class="function-actions">
+        <a href="/functions" class="btn btn-secondary">← Tutte le funzioni</a>
+    </div>
+</div>
+
+<div class="function-sections">
+    <div class="function-section">
+        <h2>Persone Assegnate</h2>
+        {% if roles %}
+        <div class="roles-list">
+            {% for role in roles %}
+            <div class="role-item">
+                <div class="role-person">
+                    <h4><a href="/employee/{{ role.person_name }}">{{ role.person_name }}</a></h4>
+                    <p class="job-title">{{ role.job_title_name or 'Ruolo non specificato' }}</p>
+                    {% if role.organizational_unit %}
+                    <p class="org-unit">{{ role.organizational_unit }}</p>
+                    {% endif %}
+                </div>
+                <div class="role-badges">
+                    {% if role.ad_interim %}
+                    <span class="interim-badge">Ad Interim</span>
+                    {% endif %}
+                    {% if role.percentage != 1.0 %}
+                    <span class="percentage-badge">{{ (role.percentage * 100)|round(1) }}%</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="no-data">Nessuna persona assegnata a questa funzione</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

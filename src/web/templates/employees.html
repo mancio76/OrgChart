@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Dipendenti - Organigramma Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Dipendenti</h1>
+    <p class="page-subtitle">{{ employees|length }} dipendenti attivi</p>
+</div>
+
+<div class="search-section">
+    <form method="get" class="search-form">
+        <input type="text" name="search" value="{{ search_query }}" 
+               placeholder="Cerca per nome o alias..." class="search-input">
+        <button type="submit" class="btn btn-primary">🔍 Cerca</button>
+        {% if search_query %}
+        <a href="/employees" class="btn btn-secondary">✖ Reset</a>
+        {% endif %}
+    </form>
+</div>
+
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>ID Dipendente</th>
+                <th>Email</th>
+                <th>Stato</th>
+                <th>Flags</th>
+                <th>Azioni</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for employee in employees %}
+            <tr>
+                <td class="employee-name">
+                    <a href="/employee/{{ employee.name }}">{{ employee.name }}</a>
+                </td>
+                <td>{{ employee.employee_id or 'N/A' }}</td>
+                <td>{{ employee.email or 'N/A' }}</td>
+                <td>
+                    <span class="status-badge status-{{ employee.status.lower() }}">
+                        {{ employee.status }}
+                    </span>
+                </td>
+                <td>{{ employee.flags or '' }}</td>
+                <td>
+                    <a href="/employee/{{ employee.name }}" class="btn-small">👤 Profilo</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if not employees %}
+<div class="no-data">
+    {% if search_query %}
+    Nessun risultato per "{{ search_query }}"
+    {% else %}
+    Nessun dipendente trovato
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

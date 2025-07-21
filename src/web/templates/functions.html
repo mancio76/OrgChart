@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Funzioni - Organigramma Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Funzioni Organizzative</h1>
+    <p class="page-subtitle">{{ functions|length }} funzioni aziendali</p>
+</div>
+
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Nome Funzione</th>
+                <th>Riporta a</th>
+                <th>Flags</th>
+                <th>Azioni</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for function in functions %}
+            <tr>
+                <td class="function-name">
+                    <a href="/function/{{ function.name }}">{{ function.name }}</a>
+                </td>
+                <td>
+                    {% if function.reports_to %}
+                    <a href="/function/{{ function.reports_to }}">{{ function.reports_to }}</a>
+                    {% else %}
+                    <span class="text-muted">Top Level</span>
+                    {% endif %}
+                </td>
+                <td>{{ function.flags or '' }}</td>
+                <td>
+                    <a href="/function/{{ function.name }}" class="btn-small">🏢 Dettagli</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Organigramma Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Dashboard</h1>
+    <p class="page-subtitle">Panoramica generale dell'organizzazione</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-content">
+            <h3>{{ stats.total_persons }}</h3>
+            <p>Dipendenti Attivi</p>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">🏢</div>
+        <div class="stat-content">
+            <h3>{{ stats.total_functions }}</h3>
+            <p>Funzioni</p>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">💼</div>
+        <div class="stat-content">
+            <h3>{{ stats.total_roles }}</h3>
+            <p>Ruoli Attivi</p>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">⏰</div>
+        <div class="stat-content">
+            <h3>{{ stats.interim_roles }}</h3>
+            <p>Ruoli ad Interim</p>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-sections">
+    <div class="dashboard-section">
+        <h2>Ruoli ad Interim</h2>
+        {% if interim_roles %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Persona</th>
+                        <th>Funzione</th>
+                        <th>Ruolo</th>
+                        <th>Dal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for role in interim_roles %}
+                    <tr>
+                        <td><a href="/employee/{{ role.person_name }}">{{ role.person_name }}</a></td>
+                        <td><a href="/function/{{ role.function_name }}">{{ role.function_name }}</a></td>
+                        <td>{{ role.job_title_name or 'N/A' }}</td>
+                        <td>{{ role.start_date or 'N/A' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="no-data">Nessun ruolo ad interim attivo</p>
+        {% endif %}
+    </div>
+    
+    <div class="dashboard-section">
+        <h2>Ricerca Rapida</h2>
+        <div class="search-container">
+            <input type="text" id="quick-search" placeholder="Cerca dipendente..." class="search-input">
+            <div id="search-results" class="search-results hidden"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}

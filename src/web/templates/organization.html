@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Organigramma - Organigramma Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Organigramma</h1>
+    <p class="page-subtitle">Struttura organizzativa aziendale</p>
+</div>
+
+<div class="org-chart-container">
+    {% set current_level = -1 %}
+    {% for node in org_tree %}
+        {% if node.level != current_level %}
+            {% if current_level >= 0 %}
+                </div>
+            {% endif %}
+            {% set current_level = node.level %}
+            <div class="org-level level-{{ node.level }}">
+                <h3 class="level-title">Livello {{ node.level + 1 }}</h3>
+        {% endif %}
+        
+        <div class="org-node">
+            <div class="org-function">
+                <h4><a href="/function/{{ node.function_name }}">{{ node.function_name }}</a></h4>
+                {% if node.person_name %}
+                <div class="org-person">
+                    <p class="person-name">
+                        <a href="/employee/{{ node.person_name }}">{{ node.person_name }}</a>
+                        {% if node.ad_interim %}
+                        <span class="interim-badge">Ad Interim</span>
+                        {% endif %}
+                    </p>
+                    {% if node.job_title_name %}
+                    <p class="job-title">{{ node.job_title_name }}</p>
+                    {% endif %}
+                    {% if node.organizational_unit %}
+                    <p class="org-unit">{{ node.organizational_unit }}</p>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="org-person vacant">
+                    <p class="vacant-text">Posizione vacante</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+    {% if current_level >= 0 %}
+        </div>
+    {% endif %}
+</div>
+
+{% if not org_tree %}
+<div class="no-data">Nessun dato organizzativo disponibile</div>
+{% endif %}
+{% endblock %}

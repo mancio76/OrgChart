@@ -7,6 +7,24 @@ class OrganigrammaRepository:
     def __init__(self, db_connection: DatabaseConnection):
         self.db = db_connection
     
+    def _dict_to_role(self, row_dict):
+        """Converte dizionario da row database in oggetto Role"""
+        return Role(
+            id=row_dict.get('id'),
+            person_name=row_dict.get('person_name', ''),
+            function_name=row_dict.get('function_name', ''),
+            organizational_unit=row_dict.get('organizational_unit'),
+            job_title_name=row_dict.get('job_title_name'),
+            percentage=row_dict.get('percentage', 1.0),
+            ad_interim=bool(row_dict.get('ad_interim', False)),
+            reports_to=row_dict.get('reports_to'),
+            start_date=row_dict.get('start_date'),
+            end_date=row_dict.get('end_date'),
+            flags=row_dict.get('flags'),
+            created_at=row_dict.get('created_at'),
+            updated_at=row_dict.get('updated_at')
+        )
+    
     # ================================================================
     # FUNCTIONS - CRUD COMPLETO
     # ================================================================
@@ -39,7 +57,7 @@ class OrganigrammaRepository:
             cursor = conn.cursor()
             cursor.execute(query, (function.name, function.reports_to, function.flags))
             conn.commit()
-            return cursor.lastrowid
+            return cursor.lastrowid # type: ignore
     
     def update_function(self, name: str, function: Function) -> bool:
         """Aggiorna funzione esistente"""
@@ -131,7 +149,7 @@ class OrganigrammaRepository:
                 person.hire_date, person.status, person.flags
             ))
             conn.commit()
-            return cursor.lastrowid
+            return cursor.lastrowid # type: ignore
     
     def update_person(self, name: str, person: Person) -> bool:
         """Aggiorna dipendente esistente"""
@@ -215,7 +233,7 @@ class OrganigrammaRepository:
             cursor = conn.cursor()
             cursor.execute(query, (job_title.name, job_title.level, job_title.flags))
             conn.commit()
-            return cursor.lastrowid
+            return cursor.lastrowid # type: ignore
     
     def update_job_title(self, name: str, job_title: JobTitle) -> bool:
         """Aggiorna job title esistente"""
@@ -289,7 +307,7 @@ class OrganigrammaRepository:
                 role.reports_to, role.start_date or date.today(), role.flags
             ))
             conn.commit()
-            return cursor.lastrowid
+            return cursor.lastrowid # type: ignore
     
     def update_role(self, role_id: int, role: Role) -> bool:
         """Aggiorna ruolo esistente"""

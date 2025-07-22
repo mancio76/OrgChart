@@ -38,7 +38,7 @@ class OrganigrammaRepository:
     def get_function_tree(self) -> List[FunctionTreeNode]:
         """Recupera funzioni in formato ad albero"""
         query = """
-        SELECT * FROM function_chart ORDER BY level, name
+        SELECT * FROM function_chart ORDER BY level, function_name
         """
         rows = self.db.execute_query(query)
         return [FunctionTreeNode(**dict(row)) for row in rows]

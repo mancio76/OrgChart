@@ -405,16 +405,28 @@ async def edit_role_form(request: Request, role_id: int):
         "other_job_titles": [j for j in all_job_titles if j.name != role.job_title_name]
     })
 
-@router.post("/admin/roles/{role_name}/edit")
+@router.post("/admin/roles/{role_id}/edit")
 async def update_roles_web(
     request: Request,
     role_id: int,
+    person_name: Optional[str] = Form(None),
+    function_name: Optional[str] = Form(None),
+    organizational_unit: Optional[str] = Form(None),
+    job_title_name: Optional[str] = Form(None),
     reports_to: Optional[str] = Form(None),
+    ad_interim: bool = Form(False),
+    percentage: float = Form(1.0),
     flags: Optional[str] = Form(None)
 ):
     """Aggiorna role via form web"""
     role_data = {
+        "person_name": person_name if person_name else None,
+        "function_name": function_name if function_name else None,
+        "organizational_unit": organizational_unit if organizational_unit else None,
+        "job_title_name": job_title_name if job_title_name else None,
         "reports_to": reports_to if reports_to else None,
+        "ad_interim": ad_interim if ad_interim else False,
+        "percentage": percentage if percentage else 1,
         "flags": flags if flags else None
     }
     

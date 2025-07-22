@@ -37,9 +37,9 @@
                 <select id="function_name" name="function_name" required>
                     <option value="">-- Seleziona funzione --</option>
                     {% for function in functions %}
-                    <option value="{{ function.name }}" 
-                            {{ 'selected' if role and role.function_name == function.name else '' }}>
-                        {{ function.name }}
+                    <option value="{{ function.function_name }}" 
+                            {{ 'selected' if role and role.function_name == function.function_name else '' }}>
+                        {{ function.path or function.function_name }}
                     </option>
                     {% endfor %}
                 </select>
@@ -77,10 +77,10 @@
                 <label for="reports_to">Riporta a</label>
                 <select id="reports_to" name="reports_to">
                     <option value="">-- Nessun manager --</option>
-                    {% for person in persons %}
-                    <option value="{{ person.name }}" 
-                            {{ 'selected' if role and role.reports_to == person.name else '' }}>
-                        {{ person.name }}
+                    {% for other_person in other_persons %}
+                    <option value="{{ other_person.name }}" 
+                            {{ 'selected' if role and role.reports_to == other_person.name else '' }}>
+                        {{ other_person.name }}
                     </option>
                     {% endfor %}
                 </select>

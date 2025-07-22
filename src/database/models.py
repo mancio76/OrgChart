@@ -12,6 +12,14 @@ class Function:
     updated_at: Optional[datetime] = None
 
 @dataclass
+class FunctionTreeNode:
+    id: int
+    function_name: str
+    reports_to: Optional[str] = None
+    level: Optional[int] = None
+    path: Optional[str] = None
+
+@dataclass
 class JobTitle:
     id: Optional[int] = None
     name: str = ""

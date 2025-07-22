@@ -1,7 +1,7 @@
 from typing import List, Optional, Dict, Tuple
 from datetime import datetime, date
 from .connection import DatabaseConnection
-from .models import Function, JobTitle, Person, Role, OrgChartNode
+from .models import Function, FunctionTreeNode, JobTitle, Person, Role, OrgChartNode
 
 class OrganigrammaRepository:
     def __init__(self, db_connection: DatabaseConnection):
@@ -34,6 +34,14 @@ class OrganigrammaRepository:
         query = "SELECT * FROM functions ORDER BY name"
         rows = self.db.execute_query(query)
         return [Function(**dict(row)) for row in rows]
+    
+    def get_function_tree(self) -> List[FunctionTreeNode]:
+        """Recupera funzioni in formato ad albero"""
+        query = """
+        SELECT * FROM function_chart ORDER BY level, name
+        """
+        rows = self.db.execute_query(query)
+        return [FunctionTreeNode(**dict(row)) for row in rows]
     
     def get_function(self, name: str) -> Optional[Function]:
         """Recupera singola funzione per nome"""

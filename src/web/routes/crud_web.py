@@ -388,7 +388,8 @@ async def edit_role_form(request: Request, role_id: int):
         raise HTTPException(404, "Ruolo non trovata")
     
     all_persons = repository.get_all_persons()
-    all_functions = repository.get_all_functions()
+    #all_functions = repository.get_all_functions()
+    all_functions = repository.get_function_tree()
     all_job_titles = repository.get_all_job_titles()
     
     return templates.TemplateResponse("admin/role_form.html", {
@@ -399,6 +400,9 @@ async def edit_role_form(request: Request, role_id: int):
         "persons": [p for p in all_persons if p is not None],
         "functions": [f for f in all_functions if f is not None],
         "job_titles": [j for j in all_job_titles if j is not None],
+        "other_persons": [p for p in all_persons if p.name != role.person_name],
+        "other_functions": [f for f in all_functions if f.function_name != role.function_name],
+        "other_job_titles": [j for j in all_job_titles if j.name != role.job_title_name]
     })
 
 @router.post("/admin/roles/{role_name}/edit")
